@@ -294,6 +294,9 @@ def cold_compile_time_measure():
     start_time = time.time()
     torch.cuda.synchronize()
     with fresh_inductor_cache():
+        X, Y = get_batch('train')
+        with ctx:
+            logits, loss = model(X, Y)
         model.train()
     torch.cuda.synchronize()
     end_time = time.time()
