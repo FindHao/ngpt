@@ -11,3 +11,5 @@ python train.py --batch_size=32 --compile=True  --max_iters=5 --log_interval=2
 python train.py --batch_size=32 --compile=False  --max_iters=5 --log_interval=2
 #reduce overhead
 python train2.py --batch_size=32 --compile=True  --max_iters=5 --log_interval=2
+
+python train-max.py --batch_size=32 --compile=True  --max_iters=5 --log_interval=2
