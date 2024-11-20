@@ -55,7 +55,7 @@ import torch.distributed as dist
 from model import GPTConfig, GPT
 from torch.nn import functional as F
 from datetime import timedelta
-from torch._inductor.utils import fresh_inductor_cache
+
 # -----------------------------------------------------------------------------
 # I/O
 
@@ -267,7 +267,7 @@ checkpoint = None # free up memory
 if compile:
     print("compiling the model... (takes a ~minute)")
     unoptimized_model = model
-    model = torch.compile(model) # requires PyTorch 2.0
+    model = torch.compile(model, mode="reduce-overhead") # requires PyTorch 2.0
 
 # wrap model into DDP container
 if ddp:
@@ -288,16 +288,6 @@ def estimate_loss():
         out[split] = losses.mean()
     model.train()
     return out
-
-@torch.no_grad()
-def cold_compile_time_measure():
-    start_time = time.time()
-    torch.cuda.synchronize()
-    with fresh_inductor_cache():
-        model.train()
-    torch.cuda.synchronize()
-    end_time = time.time()
-    print(f"cold compile time: {end_time - start_time} sec")
 
 # learning rate decay scheduler (cosine with warmup)
 def get_lr(it):
@@ -441,9 +431,6 @@ while True:
     if iter_num % eval_interval == 0 and master_process:
         rng_state_pytorch = torch.get_rng_state()
         rng_state_bytes = rng_state_pytorch.numpy().tobytes()
-        if iter_num == 0:
-            # measure the cold compilation time
-            cold_compile_time_measure()
         losses = estimate_loss()
         print(f"step {iter_num}: train loss {losses['train']:.6f}, val loss {losses['val']:.6f}")
        
